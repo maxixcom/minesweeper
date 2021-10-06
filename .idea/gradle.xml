@@ -12,6 +12,10 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/Minesweeper/task" />
+            <option value="$PROJECT_DIR$/Topics/Extension functions/Delegation" />
+            <option value="$PROJECT_DIR$/Topics/Extension functions/Fridge" />
+            <option value="$PROJECT_DIR$/Topics/Extension functions/Last digit" />
+            <option value="$PROJECT_DIR$/Topics/Extension functions/Theory" />
             <option value="$PROJECT_DIR$/Topics/Random/Always win the dice game" />
             <option value="$PROJECT_DIR$/Topics/Random/Predictable &quot;random&quot; password" />
             <option value="$PROJECT_DIR$/Topics/Random/Temperature generator" />
