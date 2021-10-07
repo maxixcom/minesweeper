@@ -4,7 +4,7 @@ import minesweeper.domain.entity.Board
 import minesweeper.domain.entity.CellType
 import minesweeper.domain.entity.Coordinates
 
-fun Board.validCellNeighbors(c: Coordinates): List<Coordinates> =
+fun Board.cellNeighbors(c: Coordinates): List<Coordinates> =
     c.neighbors()
         .filter { it.x >= 0 && it.y >= 0 && it.x < width && it.y < height }
         .filter { it != c }
@@ -22,7 +22,7 @@ fun Board.hintMines(mines: List<Coordinates>) {
     val hintPoints = mutableSetOf<Coordinates>()
 
     for (m in mines) {
-        validCellNeighbors(m)
+        cellNeighbors(m)
             .map {
                 it
             }
@@ -31,7 +31,7 @@ fun Board.hintMines(mines: List<Coordinates>) {
     }
 
     hintPoints.forEach { cell ->
-        val n = validCellNeighbors(cell).count { cellType(it) == CellType.Mine }
+        val n = cellNeighbors(cell).count { cellType(it) == CellType.Mine }
         plant(cell, CellType.Hint(n))
     }
 }

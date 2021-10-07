@@ -4,11 +4,14 @@ import minesweeper.domain.entity.Board
 import minesweeper.domain.entity.CellType
 import minesweeper.domain.entity.Coordinates
 import minesweeper.domain.entity.Game
+import minesweeper.domain.exceptions.StepOnMineException
 import minesweeper.domain.services.GameService
+import minesweeper.domain.utils.cellNeighbors
 import minesweeper.domain.utils.cellType
-import minesweeper.domain.utils.hideMines
 import minesweeper.domain.utils.hintMines
 import minesweeper.domain.utils.plant
+import minesweeper.domain.utils.plantMines
+import minesweeper.domain.utils.showOnScreen
 import kotlin.random.Random
 
 class GameServiceImpl : GameService {
@@ -16,26 +19,57 @@ class GameServiceImpl : GameService {
         val game = Game(
             board = Board(width, height),
             mines = this.createMines(width, height, numberOfMines),
+            screen = Board(width, height, CellType.Hidden)
         )
+
+        game.plantMines()
         game.hintMines()
-        game.hideMines()
 
         return game
     }
 
-    override fun playerMarksMine(game: Game, coordinate: Coordinates) {
-        when (game.board.cellType(coordinate)) {
+    override fun playerMarksMine(game: Game, coordinates: Coordinates) {
+        when (game.screen.cellType(coordinates)) {
             is CellType.Mark -> {
-                game.marks.remove(coordinate)
-                game.board.plant(coordinate, CellType.Empty)
+                game.marks.remove(coordinates)
+                game.screen.plant(coordinates, CellType.Hidden)
             }
-            is CellType.Empty -> {
-                game.marks.add(coordinate)
-                game.board.plant(coordinate, CellType.Mark)
+            is CellType.Hidden -> {
+                game.marks.add(coordinates)
+                game.screen.plant(coordinates, CellType.Mark)
             }
             else -> {
             }
         }
+    }
+
+    override fun playerExploreCell(game: Game, coordinates: Coordinates) {
+        when {
+            game.screen.cellType(coordinates) is CellType.Empty -> return
+            game.screen.cellType(coordinates) is CellType.Hint -> return
+            game.board.cellType(coordinates) is CellType.Mine -> throw StepOnMineException()
+        }
+
+        // flood fill screen
+        val stack = mutableListOf<Coordinates>()
+        val visited = mutableListOf<Coordinates>()
+
+        stack.add(coordinates)
+        do {
+
+            val c = stack.removeAt(stack.size - 1)
+            game.showOnScreen(c)
+            visited.add(c)
+
+            val neighbors = game.board.cellNeighbors(c)
+            for (n in neighbors) {
+                if (game.board.cellType(n) is CellType.Empty && !visited.contains(n)) {
+                    stack.add(n)
+                } else if (game.board.cellType(n) is CellType.Hint) {
+                    game.showOnScreen(n)
+                }
+            }
+        } while (stack.isNotEmpty())
     }
 
     override fun areAllMinesFound(game: Game): Boolean =
