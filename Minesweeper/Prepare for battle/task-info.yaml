@@ -515,6 +515,39 @@ files:
         }
     }
   learner_created: false
+- name: src/minesweeper/domain/entity/Board.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/entity/CellType.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/services/GameService.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/entity/Coordinates.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/app/services/GameServiceImpl.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/console/Application.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/console/ConsoleRunner.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/AppRunner.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/console/ConsoleHelpers.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/utils/CoordinatesExt.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/utils/BoardExt.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/8/stages/49/implement#comment
 status: Unchecked
 record: -1
