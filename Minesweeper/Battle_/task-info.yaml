@@ -549,6 +549,325 @@ files:
         }
     }
   learner_created: false
+- name: src/minesweeper/domain/utils/CoordinatesExt.kt
+  visible: true
+  text: |
+    package minesweeper.domain.utils
+
+    import minesweeper.domain.entity.Coordinates
+
+    fun Coordinates.neighbors(): List<Coordinates> =
+        (-1..1).flatMap { dx ->
+            (-1..1).map { dy ->
+                Coordinates(x + dx, y + dy)
+            }
+        }.filter { it != this }
+  learner_created: true
+- name: src/minesweeper/domain/entity/Board.kt
+  visible: true
+  text: |
+    package minesweeper.domain.entity
+
+    class Board(val width: Int = 9, val height: Int = 9) {
+        val data = List<MutableList<CellType>>(height) {
+            MutableList(width) {
+                CellType.Empty
+            }
+        }
+    }
+  learner_created: true
+- name: src/minesweeper/domain/utils/GameExt.kt
+  visible: true
+  text: |
+    package minesweeper.domain.utils
+
+    import minesweeper.domain.entity.CellType
+    import minesweeper.domain.entity.Coordinates
+    import minesweeper.domain.entity.Game
+
+    fun Game.plantMines() = mines.forEach { board.plant(it, CellType.Mine) }
+
+    fun Game.hintMines() {
+        val hintPoints = mutableSetOf<Coordinates>()
+
+        plantMines()
+
+        for (m in mines) {
+            board.validCellNeighbors(m)
+                .map {
+                    it
+                }
+                .filter { board.cellType(it) == CellType.Empty }
+                .forEach { hintPoints.add(it) }
+        }
+
+        hintPoints.forEach { cell ->
+            val n = board.validCellNeighbors(cell).count { board.cellType(it) == CellType.Mine }
+            board.plant(cell, CellType.Hint(n))
+        }
+
+        hideMines()
+    }
+
+    fun Game.hideMines() = mines.forEach { board.plant(it, CellType.Empty) }
+  learner_created: true
+- name: src/minesweeper/domain/AppRunner.kt
+  visible: true
+  text: |
+    package minesweeper.domain
+
+    interface AppRunner : Runnable
+  learner_created: true
+- name: src/minesweeper/console/ConsoleRunner.kt
+  visible: true
+  text: |
+    package minesweeper.console
+
+    import minesweeper.domain.AppRunner
+    import minesweeper.domain.entity.CellType
+    import minesweeper.domain.services.GameService
+    import minesweeper.domain.utils.cellType
+
+    class ConsoleRunner : AppRunner {
+        private val gameService: GameService = Application.gameService
+        override fun run() {
+            val numberOfMines = readNumberOfMines()
+
+            val game = gameService.createGame(9, 9, numberOfMines)
+
+            while (true) {
+                game.board.print()
+                val coordinates = readPlayerInput { c ->
+                    if (game.board.cellType(c) is CellType.Hint) {
+                        println("There is a number here!")
+                        false
+                    } else {
+                        true
+                    }
+                }
+                gameService.playerMarksMine(game, coordinates)
+                if (gameService.areAllMinesFound(game)) {
+                    game.board.print()
+                    printAllMinesFound()
+                    break
+                }
+            }
+        }
+    }
+  learner_created: true
+- name: src/minesweeper/domain/entity/Coordinates.kt
+  visible: true
+  text: |
+    package minesweeper.domain.entity
+
+    data class Coordinates(val x: Int, val y: Int)
+  learner_created: true
+- name: src/minesweeper/domain/services/GameService.kt
+  visible: true
+  text: |
+    package minesweeper.domain.services
+
+    import minesweeper.domain.entity.Coordinates
+    import minesweeper.domain.entity.Game
+
+    interface GameService {
+        fun createGame(width: Int, height: Int, numberOfMines: Int): Game
+        fun playerMarksMine(game: Game, coordinate: Coordinates)
+        fun areAllMinesFound(game: Game): Boolean
+    }
+  learner_created: true
+- name: src/minesweeper/domain/entity/Game.kt
+  visible: true
+  text: |
+    package minesweeper.domain.entity
+
+    data class Game(
+        val mines: List<Coordinates>,
+        val board: Board,
+        val marks: MutableList<Coordinates> = mutableListOf(),
+    )
+  learner_created: true
+- name: src/minesweeper/domain/entity/CellType.kt
+  visible: true
+  text: |
+    package minesweeper.domain.entity
+
+    sealed class CellType(val character: Char) {
+        object Empty : CellType('.')
+        object Mine : CellType('X')
+        class Hint(digit: Int) : CellType(digit.toString().first())
+        object Mark : CellType('*')
+    }
+  learner_created: true
+- name: src/minesweeper/app/services/GameServiceImpl.kt
+  visible: true
+  text: |
+    package minesweeper.app.services
+
+    import minesweeper.domain.entity.Board
+    import minesweeper.domain.entity.CellType
+    import minesweeper.domain.entity.Coordinates
+    import minesweeper.domain.entity.Game
+    import minesweeper.domain.services.GameService
+    import minesweeper.domain.utils.cellType
+    import minesweeper.domain.utils.hideMines
+    import minesweeper.domain.utils.hintMines
+    import minesweeper.domain.utils.plant
+    import kotlin.random.Random
+
+    class GameServiceImpl : GameService {
+        override fun createGame(width: Int, height: Int, numberOfMines: Int): Game {
+            val game = Game(
+                board = Board(width, height),
+                mines = this.createMines(width, height, numberOfMines),
+            )
+            game.hintMines()
+            game.hideMines()
+
+            return game
+        }
+
+        override fun playerMarksMine(game: Game, coordinate: Coordinates) {
+            when (game.board.cellType(coordinate)) {
+                is CellType.Mark -> {
+                    game.marks.remove(coordinate)
+                    game.board.plant(coordinate, CellType.Empty)
+                }
+                is CellType.Empty -> {
+                    game.marks.add(coordinate)
+                    game.board.plant(coordinate, CellType.Mark)
+                }
+                else -> {
+                }
+            }
+        }
+
+        override fun areAllMinesFound(game: Game): Boolean =
+            game.mines.size == game.marks.size && game.mines.containsAll(game.marks)
+
+        private fun createMines(width: Int, height: Int, number: Int): List<Coordinates> {
+            val randomGenerator = Random.Default
+            val n = number.coerceIn(0..width * height)
+            var placed = 0
+            val mines = mutableListOf<Coordinates>()
+            while (placed != n) {
+                val coordinate = Coordinates(
+                    x = randomGenerator.nextInt(0, width),
+                    y = randomGenerator.nextInt(0, height)
+                )
+                if (coordinate in mines) {
+                    continue
+                }
+                mines.add(coordinate)
+                placed++
+            }
+            return mines
+        }
+    }
+  learner_created: true
+- name: src/minesweeper/console/Application.kt
+  visible: true
+  text: |-
+    package minesweeper.console
+
+    import minesweeper.app.services.GameServiceImpl
+    import minesweeper.domain.services.GameService
+
+    object Application {
+        val gameService: GameService = GameServiceImpl()
+    }
+  learner_created: true
+- name: src/minesweeper/console/ConsoleHelpers.kt
+  visible: true
+  text: |
+    package minesweeper.console
+
+    import minesweeper.domain.entity.Board
+    import minesweeper.domain.entity.Coordinates
+
+    fun readNumberOfMines(): Int {
+        println("How many mines do you want on the field?")
+        return readLine()!!.toInt()
+    }
+
+    fun readPlayerInput(validator: (c: Coordinates) -> Boolean): Coordinates {
+        val regex = "^\\s*(?<x>\\d+)\\s+(?<y>\\d+)\\s*$".toRegex()
+        while (true) {
+            println("Set/delete mine marks (x and y coordinates):")
+            val coordinates = regex.matchEntire(readLine()!!)?.let {
+                Coordinates(
+                    x = it.groups["x"]!!.value.toInt() - 1,
+                    y = it.groups["y"]!!.value.toInt() - 1,
+                )
+            }
+            if (coordinates != null) {
+                if (validator(coordinates)) {
+                    return coordinates
+                }
+            } else {
+                println("Invalid input")
+            }
+        }
+    }
+
+    fun printAllMinesFound() {
+        println("Congratulations! You found all the mines!")
+    }
+
+    fun Board.print() {
+        println(List(width) { it + 1 }.joinToString(separator = "", prefix = " │", postfix = "│"))
+        println(List(width) { "—" }.joinToString("", prefix = "—│", postfix = "│"))
+        data.forEachIndexed { indexRow, row ->
+            println(
+                row.map { cell ->
+                    cell.character
+                }.joinToString("", prefix = "${indexRow + 1}│", postfix = "│")
+            )
+        }
+        println(List(width) { "—" }.joinToString("", prefix = "—│", postfix = "│"))
+    }
+  learner_created: true
+- name: src/minesweeper/domain/utils/BoardExt.kt
+  visible: true
+  text: |
+    package minesweeper.domain.utils
+
+    import minesweeper.domain.entity.Board
+    import minesweeper.domain.entity.CellType
+    import minesweeper.domain.entity.Coordinates
+
+    fun Board.validCellNeighbors(c: Coordinates): List<Coordinates> =
+        c.neighbors()
+            .filter { it.x >= 0 && it.y >= 0 && it.x < width && it.y < height }
+            .filter { it != c }
+
+    fun Board.plant(cell: Coordinates, cellType: CellType) {
+        data[cell.y][cell.x] = cellType
+    }
+
+    fun Board.cellType(cell: Coordinates) = data[cell.y][cell.x]
+
+    fun Board.plantMines(mines: List<Coordinates>) =
+        mines.forEach { plant(it, CellType.Mine) }
+
+    fun Board.hintMines(mines: List<Coordinates>) {
+        val hintPoints = mutableSetOf<Coordinates>()
+
+        for (m in mines) {
+            validCellNeighbors(m)
+                .map {
+                    it
+                }
+                .filter { cellType(it) == CellType.Empty }
+                .forEach { hintPoints.add(it) }
+        }
+
+        hintPoints.forEach { cell ->
+            val n = validCellNeighbors(cell).count { cellType(it) == CellType.Mine }
+            plant(cell, CellType.Hint(n))
+        }
+    }
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/8/stages/469/implement#comment
 status: Unchecked
 record: -1
