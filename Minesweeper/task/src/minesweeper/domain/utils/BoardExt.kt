@@ -4,17 +4,6 @@ import minesweeper.domain.entity.Board
 import minesweeper.domain.entity.CellType
 import minesweeper.domain.entity.Coordinates
 
-/**
- * @deprecated
- */
-fun Board.has(c: Coordinates): Boolean {
-    return if (height > 0) {
-        c.x >= 0 && c.y >= 0 && c.x < width && c.y < height
-    } else {
-        false
-    }
-}
-
 fun Board.validCellNeighbors(c: Coordinates): List<Coordinates> =
     c.neighbors()
         .filter { it.x >= 0 && it.y >= 0 && it.x < width && it.y < height }
@@ -25,3 +14,24 @@ fun Board.plant(cell: Coordinates, cellType: CellType) {
 }
 
 fun Board.cellType(cell: Coordinates) = data[cell.y][cell.x]
+
+fun Board.plantMines(mines: List<Coordinates>) =
+    mines.forEach { plant(it, CellType.Mine) }
+
+fun Board.hintMines(mines: List<Coordinates>) {
+    val hintPoints = mutableSetOf<Coordinates>()
+
+    for (m in mines) {
+        validCellNeighbors(m)
+            .map {
+                it
+            }
+            .filter { cellType(it) == CellType.Empty }
+            .forEach { hintPoints.add(it) }
+    }
+
+    hintPoints.forEach { cell ->
+        val n = validCellNeighbors(cell).count { cellType(it) == CellType.Mine }
+        plant(cell, CellType.Hint(n))
+    }
+}

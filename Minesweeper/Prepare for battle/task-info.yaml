@@ -548,6 +548,15 @@ files:
 - name: src/minesweeper/domain/utils/BoardExt.kt
   visible: true
   learner_created: true
+- name: src/minesweeper/domain/entity/Game.kt
+  visible: true
+  learner_created: true
+- name: src/minesweeper/domain/utils/GameExt.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/8/stages/49/implement#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Thu, 07 Oct 2021 10:43:07 UTC
 record: -1

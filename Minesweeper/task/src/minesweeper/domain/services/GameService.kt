@@ -1,7 +1,10 @@
 package minesweeper.domain.services
 
-import minesweeper.domain.entity.Board
+import minesweeper.domain.entity.Coordinates
+import minesweeper.domain.entity.Game
 
 interface GameService {
-    fun createBoard(width: Int, height: Int, numberOfMines: Int): Board
+    fun createGame(width: Int, height: Int, numberOfMines: Int): Game
+    fun playerMarksMine(game: Game, coordinate: Coordinates)
+    fun areAllMinesFound(game: Game): Boolean
 }
