@@ -1,4 +1,4 @@
-# Connect Four project
+# Minesweeper project
 
 My implementation of study project.
 
